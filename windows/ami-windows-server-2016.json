@@ -1,0 +1,60 @@
+{
+    "variables": {
+      "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+      "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+      "aws_session_token": "{{env `AWS_SESSION_TOKEN`}}",
+      "admin_password": "{{env `PACKER_ADMIN_PASSWORD`}}",
+      "region":         "us-west-2"
+    },
+    "sensitive-variables": ["admin_password"],
+    "builders": [
+      {
+        "type": "amazon-ebs",
+        "access_key": "{{ user `aws_access_key` }}",
+        "secret_key": "{{ user `aws_secret_key` }}",
+        "token": "{{ user `aws_session_token` }}",
+        "region": "{{ user `region` }}",
+        "instance_type": "c5.2xlarge",
+        "source_ami_filter": {
+          "filters": {
+            "virtualization-type": "hvm",
+            "name": "*Windows_Server-2016-English-Full-Base*",
+            "root-device-type": "ebs"
+          },
+          "most_recent": true,
+          "owners": "amazon"
+        },
+        "ami_block_device_mappings": [ {
+          "device_name": "/dev/sda1",
+          "volume_size": 80,
+          "encrypted": true,
+          "delete_on_termination": true
+        } ],
+        "launch_block_device_mappings": [ {
+          "device_name": "/dev/sda1",
+          "volume_size": 80,
+          "encrypted": true,
+          "delete_on_termination": true
+        } ],
+        "ami_name": "Windows-2016-Image-{{timestamp}}",
+        "ami_description": "Windows 2016 Image - Built with Packer",
+        "user_data_file": "windows/bootstrap_win.txt",
+        "communicator": "winrm",
+        "winrm_username": "Administrator",
+        "tags": {
+          "Name": "Windows-2016-Image-{{timestamp}}",
+          "Description": "/dev/sda1 - Windows 2016 Image - Built with Packer"
+        }
+      }
+    ],
+    "provisioners": [
+      {
+        "type": "windows-restart"
+      },
+      {
+        "type": "powershell",
+        "environment_vars": "ADMIN_PASSWORD={{ user `admin_password` }}",
+        "inline": ["net user Administrator $Env:ADMIN_PASSWORD"]
+      }
+    ]
+  }
