@@ -1,0 +1,25 @@
+
+---
+- hosts: all
+  remote_user: Administrator
+  gather_facts: false
+  tasks:
+  - name: Install required packages
+    win_chocolatey:
+      name:
+        - 7zip
+        - awscli
+        - awstools.powershell
+        - directx-sdk
+        - dotnet3.5
+        - dotnetfx
+        - git
+        - gpg4win
+        - jdk8
+        - nxlog
+        - p4
+        - python2
+        - sysmon
+        - vcredist2013
+        - visualstudio2019buildtools
+
