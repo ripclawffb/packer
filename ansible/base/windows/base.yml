@@ -100,7 +100,7 @@
           type: dword
         - path: HKLM:\SYSTEM\CurrentControlSet\services\AFD\Parameters
           name: DefaultSendWindow
-          data: 200000s
+          data: 200000
           type: dword
         - path: HKLM:\SYSTEM\CurrentControlSet\services\AFD\Parameters
           name: DynamicSendBufferDisable
