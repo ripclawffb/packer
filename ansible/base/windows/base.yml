@@ -5,6 +5,15 @@
   gather_facts: false
 
   tasks:
+    - name: Install features
+      win_feature:
+        name: "{{ item.name }}"
+        state: "{{ item.state | default(omit) }}"
+        include_management_tools: "{{ item.include_management_tools | default(omit) }}"
+        include_sub_features: "{{ item.include_sub_features | default(omit) }}"
+      loop:
+        - name: Net-Framework-Core
+
     - name: Install packages
       win_chocolatey:
         name: "{{ item.name }}"
@@ -20,7 +29,6 @@
           - { name: awscli, version: '2.0.41' }
           - { name: awstools.powershell, version: '1.1.1120.20130916' }
           - { name: directx-sdk, version: '9.29.1962.0' }
-          - { name: dotnet3.5, version: '3.5.20160716'}
           - { name: dotnetfx, version: '4.8.0.20190930' }
           - { name: git, version: '2.28.0' }
           - { name: gpg4win, version: '3.1.12' }
