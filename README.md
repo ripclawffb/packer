@@ -32,6 +32,11 @@ The following environment variables should be set before running packer:
 * Administrator Password
     * `PACKER_ADMIN_PASSWORD`
 
+For large AMI bulds, you may need to extend the timeout for the AMI image creation by setting the following environmental variables.
+
+* `AWS_MAX_ATTEMPTS` - 60
+* `AWS_POLL_DELAY_SECONDS` - 90
+
 ## Building Packer Image
 
 Currently, this automation assumes that you'll be building resources in US-West-2 AWS region.
