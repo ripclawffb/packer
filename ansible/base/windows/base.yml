@@ -14,6 +14,18 @@
       loop:
         - name: Net-Framework-Core
 
+    - name: Install Chocolatey
+      win_chocolatey:
+        name: chocolatey
+
+    - name: Add Chocolatey source
+      win_chocolatey_source:
+        name: Chocolatey internal source
+        state: present
+        source: "{{ lookup('env','ARTIFACTORY_URL') }}"
+        source_username: "{{ lookup('env','ARTIFACTORY_USERNAME') }}"
+        source_password: "{{ lookup('env','ARTIFACTORY_TOKEN') }}"
+
     - name: Install packages
       win_chocolatey:
         name: "{{ item.name }}"
@@ -63,6 +75,21 @@
         IsSingleInstance: 'Yes'
         ExclusionPath:
           - 'C:\Jenkins'
+
+    - name: Add Networking PowerShell module
+      win_psmodule:
+        name: NetworkingDsc
+        state: present
+
+    - name: Enable logging of blocked connections
+      win_dsc:
+        resource_name: FirewallProfile
+        Name: "{{ item.name }}"
+        LogBlocked: true
+      loop:
+        - name: Private
+        - name: Public
+        - name: Domain
 
     - name: Add firewall rules
       win_firewall_rule:
@@ -142,6 +169,7 @@
 
     - name: Set C pagefile, override if exists
       win_pagefile:
+        automatic: false
         drive: C
         initial_size: 31720000
         maximum_size: 102400000

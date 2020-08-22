@@ -31,6 +31,10 @@ The following environment variables should be set before running packer:
     * `AWS_SUBNET_NAME`
 * Administrator Password
     * `PACKER_ADMIN_PASSWORD`
+* Artifactory Credentials
+    * `ARTIFACTORY_USERNAME` - your email address
+    * `ARTIFACTORY_TOKEN` - your Artifactory API token
+    * `ARTIFACTORY_URL` - URL of Artifactory server
 
 For large AMI bulds, you may need to extend the timeout for the AMI image creation by setting the following environmental variables.
 
