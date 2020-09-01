@@ -5,14 +5,16 @@
   gather_facts: false
 
   tasks:
+    - name: Include default vars
+      include_vars: vars.yml
+
     - name: Install features
       win_feature:
         name: "{{ item.name }}"
         state: "{{ item.state | default(omit) }}"
         include_management_tools: "{{ item.include_management_tools | default(omit) }}"
         include_sub_features: "{{ item.include_sub_features | default(omit) }}"
-      loop:
-        - name: Net-Framework-Core
+      loop: "{{ windows_features }}"
 
     - name: Install Chocolatey
       win_chocolatey:
@@ -36,26 +38,12 @@
         install_args: "{{ item.install_args | default(omit) }}"
         timeout: "{{ item.timeout | default(omit) }}"
         force: "{{ item.force | default(omit) }}"
-      with_items:
-          - { name: 7zip, version: '19.0' }
-          - { name: awscli, version: '2.0.41' }
-          - { name: awstools.powershell, version: '1.1.1120.20130916' }
-          - { name: directx-sdk, version: '9.29.1962.0' }
-          - { name: dotnetfx, version: '4.8.0.20190930' }
-          - { name: git, version: '2.28.0' }
-          - { name: gpg4win, version: '3.1.12' }
-          - { name: jdk8, version: '8.0.211' }
-          - { name: nxlog, version: '2.10.2150' }
-          - { name: p4, version: '2020.1' }
-          - { name: python2, version: '2.7.18' }
-          - { name: sysmon, version: '11.11' }
-          - { name: unreal-linux-toolchain, version: '15.8.0.1', package_params: '/DIRECTORY:C:\UE-Toolchain-v15' }
-          - { name: vcredist2013, version: '12.0.40660.20180427' }
-          - { name: visualstudio2019professional, version: '16.7.0.0', package_params: "--allWorkloads --includeRecommended --includeOptional --passive --locale en-US" }
+      with_items: "{{ choco_packages }}"
       ignore_errors: true
 
     - name: Install pip packages
-      win_shell: pip install awscli
+      win_shell: "pip install {{ item }}"
+      loop: "{{ pip_packages }}"
 
     - name: Create Jenkins folder
       win_file:
@@ -73,8 +61,7 @@
       win_dsc:
         resource_name: WindowsDefender
         IsSingleInstance: 'Yes'
-        ExclusionPath:
-          - 'C:\Jenkins'
+        ExclusionPath: "{{ windows_defender_excluded_paths }}"
 
     - name: Add Networking PowerShell module
       win_psmodule:
@@ -103,24 +90,7 @@
         remoteip: "{{ item.remoteip | default(omit) }}"
         remoteport: "{{ item.remoteport | default(omit) }}"
         state: "{{ item.state }}"
-      loop:
-        - name: Valorant Firewall Ports
-          action: allow
-          direction: in
-          enabled: yes
-          localip: any
-          localport: 8008-8009
-          protocol: tcp
-          remoteip: any
-          remoteport: any
-          state: present
-        - name: ICMP Allow incoming V4 echo request
-          action: allow
-          direction: in
-          enabled: yes
-          profiles: private
-          protocol: icmpv4
-          state: present
+      loop: "{{ windows_firewall_rules }}"
 
     - name: Add Windows registry keys
       win_regedit:
@@ -128,19 +98,7 @@
         name: "{{ item.name }}"
         data: "{{ item.data }}"
         type: "{{ item.type }}"
-      loop:
-        - path: HKLM:\SYSTEM\CurrentControlSet\services\AFD\Parameters
-          name: DefaultReceiveWindow
-          data: 10000
-          type: dword
-        - path: HKLM:\SYSTEM\CurrentControlSet\services\AFD\Parameters
-          name: DefaultSendWindow
-          data: 200000
-          type: dword
-        - path: HKLM:\SYSTEM\CurrentControlSet\services\AFD\Parameters
-          name: DynamicSendBufferDisable
-          data: 0
-          type: dword
+      loop: "{{ windows_registry_keys }}"
 
     - name: Add Windows environment variables
       win_environment:
@@ -148,13 +106,7 @@
         state: "{{ item.state | default(omit) }}"
         level: "{{ item.level }}"
         value: "{{ item.value | default(omit) }}"
-      loop:
-        - name: P4CHARSET
-          level: machine
-          value: utf8
-        - name: LINUX_MULTIARCH_ROOT
-          level: machine
-          value: C:\UE-Toolchain-v15
+      loop: "{{ windows_environment }}"
 
     - name: Add to Windows path environment variable
       win_path:
@@ -162,15 +114,60 @@
         state: "{{ item.state | default(omit) }}"
         scope: "{{ item.scope | default(omit) }}"
         elements: "{{ item.elements }}"
-      loop:
-        - elements:
-            - C:\bin
-            - C:\Program Files (x86)\Xoreax\IncrediBuild
+      loop: "{{ windows_path }}"
 
     - name: Set C pagefile, override if exists
       win_pagefile:
         automatic: false
         drive: C
-        initial_size: 31720000
-        maximum_size: 102400000
+        initial_size: "{{ windows_pagefile_initial_size }}"
+        maximum_size: "{{ windows_pagefile_maximum_size }}"
         state: present
+
+    - name: Create EC2 config folders
+      win_file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - C:\ProgramData\Amazon
+        - C:\ProgramData\Amazon\EC2-Windows
+        - C:\ProgramData\Amazon\EC2-Windows\Launch
+        - C:\ProgramData\Amazon\EC2-Windows\Launch\Config
+        - C:\ProgramData\Amazon\ENA_Drivers
+
+    - name: Download EC2 launch files and drivers
+      win_get_url:
+        url: "{{ item.url }}"
+        dest: "{{ item.dest }}"
+      loop:
+        - url: https://s3.amazonaws.com/ec2-downloads-windows/EC2Launch/latest/EC2-Windows-Launch.zip
+          dest: C:\ProgramData\Amazon\EC2-Windows-Launch.zip
+        - url: https://s3.amazonaws.com/ec2-downloads-windows/EC2Launch/latest/install.ps1
+          dest: C:\ProgramData\Amazon\install.ps1
+        - url: https://s3.amazonaws.com/ec2-windows-drivers-downloads/ENA/Latest/AwsEnaNetworkDriver.zip
+          dest: C:\ProgramData\Amazon\ENA_Drivers\AwsEnaNetworkDriver.zip
+
+    - name: Unzip ENA drivers
+      win_unzip:
+        src: C:\ProgramData\Amazon\ENA_Drivers\AwsEnaNetworkDriver.zip
+        dest: C:\ProgramData\Amazon\ENA_Drivers\
+
+    # - name: Install ENA drivers
+    #   win_command: powershell.exe -ExecutionPolicy ByPass -File C:\ProgramData\Amazon\ENA_Drivers\install.ps1
+    #   retries: 5
+
+    - name: Install EC2 launch files
+      win_command: powershell.exe -ExecutionPolicy ByPass -File C:\ProgramData\Amazon\install.ps1
+
+    - name: Copy EC2 launch config
+      win_copy:
+        content: >
+          {
+            "SetComputerName": true,
+            "SetWallpaper": true,
+            "AddDnsSuffixList": true,
+            "ExtendBootVolumeSize": true,
+            "AdminPasswordType": "Random",
+            "AdminPassword": ""
+          }
+        dest: C:\ProgramData\Amazon\EC2-Windows\Launch\Config\LaunchConfig.json
