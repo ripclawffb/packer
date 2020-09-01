@@ -17,6 +17,7 @@ Before you can run packer to build images, you'll need the following pre-requisi
 * Administrator password for image
 * Pyenv
 * Pipenv
+* [Windows Update Packer Provisioner](https://github.com/rgl/packer-provisioner-windows-update)
 
 ## Variables
 
