@@ -1,0 +1,68 @@
+---
+# All the configs for Ansible can be set in this file
+ansible_winrm_read_timeout_sec: 300
+
+windows_features:
+  - name: Net-Framework-Core
+
+choco_packages:
+  - { name: 7zip, version: '19.0' }
+  - { name: awscli, version: '2.0.41' }
+  - { name: awstools.powershell, version: '1.1.1120.20130916' }
+  - { name: carbon-black }
+  - { name: directx-sdk, version: '9.29.1962.0' }
+  - { name: dotnetfx, version: '4.8.0.20190930' }
+  - { name: git, version: '2.28.0' }
+  - { name: gpg4win, version: '3.1.12' }
+  - { name: jdk8, version: '8.0.211' }
+  - { name: nxlog, version: '2.10.2150' }
+  - { name: p4, version: '2020.1' }
+  - { name: procexp, version: '16.32' }
+  - { name: python2, version: '2.7.18' }
+  - { name: sysmon, version: '11.11' }
+  - { name: vcredist2013, version: '12.0.40660.20180427' }
+  - { name: visualstudio2019professional, version: '16.7.0.0', package_params: "--allWorkloads --includeRecommended --includeOptional --passive --locale en-US" }
+  - { name: vscode.portable, version: '1.4.82' }
+  - { name: windirstat, version: '1.1.2.20161210'}
+
+pip_packages:
+  - awscli
+
+windows_defender_excluded_paths:
+  - 'C:\Jenkins'
+
+windows_firewall_rules:
+  - name: ICMP Allow incoming V4 echo request
+    action: allow
+    direction: in
+    enabled: yes
+    profiles: private
+    protocol: icmpv4
+    state: present
+
+windows_registry_keys:
+  - path: HKLM:\SYSTEM\CurrentControlSet\services\AFD\Parameters
+    name: DefaultReceiveWindow
+    data: 10000
+    type: dword
+  - path: HKLM:\SYSTEM\CurrentControlSet\services\AFD\Parameters
+    name: DefaultSendWindow
+    data: 200000
+    type: dword
+  - path: HKLM:\SYSTEM\CurrentControlSet\services\AFD\Parameters
+    name: DynamicSendBufferDisable
+    data: 0
+    type: dword
+
+windows_environment:
+  - name: P4CHARSET
+    level: machine
+    value: utf8
+
+windows_path:
+  - elements:
+      - C:\bin
+      - C:\Program Files (x86)\Xoreax\IncrediBuild
+
+windows_pagefile_initial_size: 31720
+windows_pagefile_maximum_size: 102400

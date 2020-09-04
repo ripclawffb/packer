@@ -63,6 +63,9 @@
     ],
     "provisioners": [
       {
+        "type": "windows-update"
+      },
+      {
        "type": "ansible",
        "user": "Administrator",
        "use_proxy": false,
